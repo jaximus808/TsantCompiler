@@ -16,15 +16,17 @@ unsigned char* valueCalculator(vector<string > LOI)
 
 }
 
-// class value
-// {
-//     public:
-//         value(vector<string > equation)
-//         {
+class value
+{
+    public:
+        value(vector<string > _equation)
+        {
+            equation = _equation; 
+        }
+    private:
+        vector<string> equation; 
 
-//         }
-
-// };
+};
 
 
 class instructions
@@ -41,6 +43,7 @@ class instructions
         {
             operationType = _operation; 
             name = _name; 
+            setValue = value(_value); 
 
         }
 
@@ -52,8 +55,7 @@ class instructions
     private:
 
         //for assigning
-
-
+        value setValue; 
 
         string operationType;
         
@@ -72,6 +74,16 @@ vector<string> subVec(vector<string> baseVec, int start, int end)
     }
 
     return subbed; 
+}
+
+bool isNum(string sOI)
+{
+    for(int i = 0; i < sOI.length(); i++)
+    {
+        int x = (int)sOI[i];
+        if(x < 48 || x > 57 ) return false;
+    }
+    return true; 
 }
 
 bool keywordExist(string questionKey)
@@ -96,11 +108,14 @@ void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
     vector<string> cacheTokens; 
     for(int line = 0; line < bAST.size(); line++)
     { 
-
-
         for(int pointer = 0; pointer < bAST[line].size(); pointer++)
         {
-            if(bAST[line][pointer] == "int")
+
+            if(isNum(bAST[line][pointer]))
+            {
+                throw "Expected Token";
+            }
+            else if(bAST[line][pointer] == "int")
             {
                 //check infront
                 if(pointer+1 == bAST[line].size())
@@ -114,7 +129,7 @@ void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 instructions declare(bAST[line][pointer+1], bAST[line][pointer], "none", "declare");
                 orderOP.push_back(declare);
             }
-            if(bAST[line][pointer] == "=")
+            else if(bAST[line][pointer] == "=")
             {
                 //check infront
                 if(cacheTokens.size())
@@ -127,13 +142,12 @@ void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 }
                 instructions assign(bAST[line][pointer+1], bAST[line][pointer], "none", "declare");
                 orderOP.push_back(assign);
+                pointer = bAST[line].size();
             }
-            else
+            else if(!keywordExist(bAST[line][pointer]))
             {
                 if(cacheTokens.size() == 1) throw "expected expression"; 
                 cacheTokens.push_back(bAST[line][pointer]);
-
-
             }
         }
         cacheTokens.clear();
@@ -184,7 +198,7 @@ int main()
 
             curW += c;
         }
-        
+        LexicalAnalysis(lexAnalysis, instructionList); 
 
 
     }
