@@ -7,14 +7,7 @@
 
 using namespace std; 
 
-//LOI = Line of interest
-// unsigned char* valueCalculator(vector<string > LOI)
-// {
-
-    
-
-// }
-
+// finsih the operator shit; 6/9/2022
 
 
 bool isNum(string sOI)
@@ -55,7 +48,6 @@ int int32String(string input)
     for(int i = input.length()-1; i >= 0 ; i--)
     {
         int decC = (int)input[i];
-        cout << decC << endl;
         if(decC>57 || decC < 48)  
         {
             cout << "error" << endl;
