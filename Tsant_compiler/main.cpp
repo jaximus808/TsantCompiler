@@ -9,7 +9,36 @@ using namespace std;
 
 // finsih the operator shit; 6/9/2022
 
+bool seperateKeyword(char c)
+{
+    int chars[] = {'=','+','-','*','/'};
 
+    for(int i = 0; i < 5; i++)
+    {
+        if(chars[i] == c) return true; 
+    }
+    return false; 
+}
+
+class variableManager
+{
+    public:
+        variableManager(string _type)
+        {
+            type = _type;
+            char placeHolder[1] = {'0'};
+            value = placeHolder;
+        }
+
+        void setValue(char* byteVal)
+        {
+            value = byteVal;
+        }
+
+    private:
+        char* value; 
+        string type; 
+};
 bool isNum(string sOI)
 {
     for(int i = 0; i < sOI.length(); i++)
@@ -50,7 +79,7 @@ int int32String(string input)
         int decC = (int)input[i];
         if(decC>57 || decC < 48)  
         {
-            cout << "error" << endl;
+            cout << "error: char is not a number" << endl;
             return 0;
         } //make this reference a variab;e 
         value+=(decC-48) * pow(10, (input.length()-1-i));
@@ -59,10 +88,22 @@ int int32String(string input)
     return value; 
 }
 
-unsigned char* byteConverter(string type, vector<string> parts)
+vector<string> subVector(vector<string> &line, int start, int end)
+{
+    vector<string> returnVec;
+    for(int i = start; i < end; i++)
+    {
+        returnVec.push_back(line[i]);
+    }
+    return returnVec; 
+}
+
+char* byteConverter(string type, vector<string> parts, unordered_map<string, variableManager* > &varMap)
 {
 
+    //keywords
     vector<string> opKeys;
+    //variables and values 
     vector<string> opTokens;
     
     bool tokenPhaseToken = true; 
@@ -79,12 +120,17 @@ unsigned char* byteConverter(string type, vector<string> parts)
         if(tokenOp) opTokens.push_back(parts[i]);
         else opKeys.push_back(parts[i]);
     }
+    if(opKeys.size()== opTokens.size()-1 )
+    {
+        cout << "ERROR!!!!";
+        return NULL; 
+    }
     if(type == "int")
     {
-
+        int value = 0; 
 
     }
-    unsigned char* dog = NULL; 
+    char* dog = NULL; 
     return dog;
 
 }
@@ -109,30 +155,22 @@ class value
             return equation; 
         }
 
+        string getValuePrint() 
+        {
+            string x = "";
+            for(int i = 0; i < equation.size(); i++)
+            {
+                x+= equation[i];
+            }
+            return x; 
+        }
+
     private:
         vector<string> equation; 
 
 };
 
-class variableManager
-{
-    public:
-        variableManager(string _type)
-        {
-            type = _type;
-            unsigned char placeHolder[1] = {'0'};
-            value = placeHolder;
-        }
 
-        void setValue(unsigned char* byteVal)
-        {
-            value = byteVal;
-        }
-
-    private:
-        unsigned char* value; 
-        string type; 
-};
 
 class instructions
 {
@@ -162,8 +200,21 @@ class instructions
             }
             else if(operationType == "assign")
             {
-                unsigned char* byteVal = byteConverter(type, setValue.getValue());
+                char* byteVal = byteConverter(type, setValue.getValue(),variables);
             }
+        }
+
+        void debug()
+        {
+            if(operationType == "declare")
+            {
+                cout << "declaring variable " <<  name <<" with type "<<type;
+            }
+            else if(operationType == "assign")
+            {
+                cout << "variable " <<  name <<" with operation "<<setValue.getValuePrint();
+            }
+            cout <<"\n";
         }
 
     private:
@@ -199,7 +250,7 @@ void throwExpected()
     cout << "error";
 }
 
-void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderOP )
+bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderOP )
 {
 
     vector<string> cacheTokens; 
@@ -207,10 +258,10 @@ void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
     { 
         for(int pointer = 0; pointer < bAST[line].size(); pointer++)
         {
-
             if(isNum(bAST[line][pointer]))
             {
-                cout << "error";
+                cout << "error: expected token!";
+                return false; 
             }
             else if(bAST[line][pointer] == "int")
             {
@@ -221,7 +272,8 @@ void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 }
                 if(keywordExist(bAST[line][pointer+1]))
                 {
-                    cout <<"error";
+                    cout <<"error, name contains keyword!";
+                    return false; 
                 }
                 instructions declare(bAST[line][pointer+1], bAST[line][pointer], "none", "declare");
                 orderOP.push_back(declare);
@@ -229,27 +281,37 @@ void LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
             else if(bAST[line][pointer] == "=")
             {
                 //check infront
-                if(cacheTokens.size())
+                if(cacheTokens.size() == 0)
                 {
-                    cout << "error";
+                    cout << "error: no token passed for assignment";
+                    return false; 
                 }
                 if(pointer+1 == bAST[line].size())
                 {
-                    cout << "error";
+                    cout << "error: expected arguments at the end of assignment";
+                    return false; 
                 }
-                instructions assign(bAST[line][pointer+1], bAST[line][pointer], "none", "assign");
+                instructions assign(bAST[line][pointer-1], subVector(bAST[line], pointer+1, bAST[line].size()) , "assign");
                 orderOP.push_back(assign);
                 pointer = bAST[line].size();
             }
             else if(!keywordExist(bAST[line][pointer]))
             {
-                if(cacheTokens.size() == 1) throw "expected expression"; 
+                if(cacheTokens.size() == 1) 
+                {
+                    cout <<"error: unexpected token";
+                    return false; 
+                }
                 cacheTokens.push_back(bAST[line][pointer]);
             }
         }
         cacheTokens.clear();
     }
-
+    for(int i =  0; i < orderOP.size(); i++)
+    {
+        orderOP[i].debug();
+    }
+    return true; 
 
 }
 
@@ -264,10 +326,9 @@ void interpertor(unordered_map<string, variableManager* > &varMap,vector<instruc
 int main()
 {
     
-    cout << int32String("124") << endl; 
 
     std::ifstream file; 
-    file.open("main.ch");
+    file.open("main.tn");
 
     vector<vector<string> > lexAnalysis;
 
@@ -285,24 +346,67 @@ int main()
         {
 
             c = file.get(); 
-            if((int)c == -1) break;
-            if(c == ' ')
+            if((int)c == -1)
             {
-                lineVec.push_back(curW); 
+                if(curW.length() >0) lineVec.push_back(curW); 
+                curW = "";
+                if(lineVec.size() > 0)
+                { 
+                    lexAnalysis.push_back(lineVec);
+
+                    for(int i = 0; i < lineVec.size(); i++)
+                    {
+                        cout << lineVec[i] << ",";
+                    }
+                    cout << "\n";
+                    lineVec.clear();
+                }
+                break;
+            } 
+            
+
+            if(seperateKeyword(c))
+            {
+                
+                if(curW.length() >0) lineVec.push_back(curW); 
+                curW="";
+                string t = "";
+                
+                lineVec.push_back(t+c);
             }
-            if(int(c) == 10) 
+            else if(c == ' ')
+            {
+                if(curW.length() >0) lineVec.push_back(curW); 
+                curW = "";
+            }
+            else if(int(c) == 10) 
             {
                 if(lineVec.size() > 0)
                 { 
                     lexAnalysis.push_back(lineVec);
+
+                    for(int i = 0; i < lineVec.size(); i++)
+                    {
+                        cout << lineVec[i] << ",";
+                    }
+                    cout << "\n";
                     lineVec.clear();
                 }
                 
             }
+            else 
+            {
 
-            curW += c;
+                curW += c;
+            }
         }
-        LexicalAnalysis(lexAnalysis, instructionList); 
+        if(!LexicalAnalysis(lexAnalysis, instructionList))
+        {
+            cout << "\nCompiler Stopped";
+            return 1; 
+        }
+        
+         
 
 
     }
