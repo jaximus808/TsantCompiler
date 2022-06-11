@@ -20,6 +20,7 @@ bool seperateKeyword(char c)
     return false; 
 }
 
+
 class variableManager
 {
     public:
