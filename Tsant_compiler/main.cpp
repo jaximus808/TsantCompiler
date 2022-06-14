@@ -9,17 +9,6 @@ using namespace std;
 
 // finsih the operator shit; 6/9/2022
 
-bool seperateKeyword(char c)
-{
-    int chars[] = {'=','+','-','*','/'};
-
-    for(int i = 0; i < 5; i++)
-    {
-        if(chars[i] == c) return true; 
-    }
-    return false; 
-}
-
 
 class variableManager
 {
@@ -40,6 +29,22 @@ class variableManager
         char* value; 
         string type; 
 };
+
+
+
+#pragma region helperFuncs
+bool seperateKeyword(char c)
+{
+    int chars[] = {'=','+','-','*','/','(',')',','};
+
+    for(int i = 0; i < 8; i++)
+    {
+        if(chars[i] == c) return true; 
+    }
+    return false; 
+}
+
+
 bool isNum(string sOI)
 {
     for(int i = 0; i < sOI.length(); i++)
@@ -88,7 +93,6 @@ int int32String(string input)
     }
     return value; 
 }
-
 vector<string> subVector(vector<string> &line, int start, int end)
 {
     vector<string> returnVec;
@@ -136,8 +140,26 @@ char* byteConverter(string type, vector<string> parts, unordered_map<string, var
 
 }
 
+vector<string> subVec(vector<string> baseVec, int start, int end)
+{
+    vector<string> subbed; 
+
+    for(int _i = start; _i < end; _i++)
+    {
+        subbed.push_back(baseVec[_i]);
+    }
+
+    return subbed; 
+}
 
 
+
+void throwExpected()
+{
+    cout << "error";
+}
+
+#pragma endregion helperFuncs
 
 class value
 {
@@ -175,6 +197,7 @@ class value
 
 class instructions
 {
+    //remove operation parameter
     public:
         instructions(string _name, string _type, string _value ,string _operation )
         {
@@ -184,13 +207,32 @@ class instructions
             setValue = value(); 
         }
 
+        //assigning and calling
         instructions(string _name, vector<string> _value, string _operation)
         {
             operationType = _operation; 
             name = _name; 
-            setValue = value(_value); 
+            if(operationType == "assign")
+            {
+                setValue = value(_value); 
+            }
+            else if(operationType == "funcCall") 
+            {
+                funcParametersUnParsed = _value; 
+            }
 
         }
+
+        //declaring functions
+        instructions(string _name, vector<instructions*> &_ops, vector<instructions*> &parameters, string _operation)
+        {
+            operationType = _operation; 
+            name = _name; 
+            
+
+        }
+
+
 
         void operate(unordered_map<string,variableManager*> &variables)
         {
@@ -204,6 +246,7 @@ class instructions
                 char* byteVal = byteConverter(type, setValue.getValue(),variables);
             }
         }
+
 
         void debug()
         {
@@ -229,27 +272,16 @@ class instructions
         string name;
         string type; 
 
+
+        //add a function
+        vector<instructions* > funcOperations; 
+        vector<instructions* > funcParameters; 
+        vector<string > funcParametersUnParsed;
+
 };
 
 
-vector<string> subVec(vector<string> baseVec, int start, int end)
-{
-    vector<string> subbed; 
 
-    for(int _i = start; _i < end; _i++)
-    {
-        subbed.push_back(baseVec[_i]);
-    }
-
-    return subbed; 
-}
-
-
-
-void throwExpected()
-{
-    cout << "error";
-}
 
 bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderOP )
 {
@@ -257,8 +289,54 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
     vector<string> cacheTokens; 
     for(int line = 0; line < bAST.size(); line++)
     { 
+        bool paramCheck = false; 
+        int parenthesisDepth = 0; 
+        vector<instructions> tokenInstructs; 
+        string paramQues = ""; 
+        vector<string> unparsedTokens; 
         for(int pointer = 0; pointer < bAST[line].size(); pointer++)
         {
+
+            if(paramCheck)
+            {
+                if(bAST[line][pointer] == "(")
+                {
+                    parenthesisDepth++; 
+                }
+                else if(bAST[line][pointer] == ")")
+                {
+                    parenthesisDepth--; 
+                    if (parenthesisDepth == 0)
+                    {
+                        instructions funcCall(cacheTokens[0], unparsedTokens, "funcCall");
+                        orderOP.push_back(funcCall); 
+                        cacheTokens.clear(); 
+                        paramCheck = false;
+                        paramQues = "";
+                    }
+                    
+                }
+                if(parenthesisDepth == 1)
+                {
+                    if(bAST[line][pointer] == ",")
+                    {
+                        if(paramQues.length() == 0) return; 
+                        unparsedTokens.push_back(paramQues);
+                        paramQues = "";
+                        
+                    }
+                    else 
+                    {
+                        paramQues += bAST[line][pointer]; 
+                    }
+                    
+                }
+                else 
+                {
+                    paramQues += bAST[line][pointer];
+                }
+                    
+            }
             if(isNum(bAST[line][pointer]))
             {
                 cout << "error: expected token!";
@@ -295,6 +373,25 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 instructions assign(bAST[line][pointer-1], subVector(bAST[line], pointer+1, bAST[line].size()) , "assign");
                 orderOP.push_back(assign);
                 pointer = bAST[line].size();
+                
+            }
+            else if(bAST[line][pointer] == "(")
+            {
+                //check infront
+                if(cacheTokens.size() == 0)
+                {
+                    cout << "error: no token passed for function paramters";
+                    return false; 
+                }
+                if(pointer+1 == bAST[line].size())
+                {
+                    cout << "error: expected arguments at the end of assignment";
+                    return false; 
+                }
+                parenthesisDepth++; 
+                paramCheck = true; 
+                cacheTokens.push_back(bAST[line][pointer-1]);
+                
             }
             else if(!keywordExist(bAST[line][pointer]))
             {
@@ -324,12 +421,14 @@ void interpertor(unordered_map<string, variableManager* > &varMap,vector<instruc
         orders[i].operate(varMap);
     }
 }
+
 int main()
 {
     
 
     std::ifstream file; 
     file.open("main.tn");
+
 
     vector<vector<string> > lexAnalysis;
 
@@ -366,22 +465,15 @@ int main()
             } 
             
 
-            if(seperateKeyword(c))
+            
+            if(int(c) == 10) 
             {
-                
-                if(curW.length() >0) lineVec.push_back(curW); 
-                curW="";
-                string t = "";
-                
-                lineVec.push_back(t+c);
-            }
-            else if(c == ' ')
-            {
-                if(curW.length() >0) lineVec.push_back(curW); 
-                curW = "";
-            }
-            else if(int(c) == 10) 
-            {
+
+                if(curW.length() >0) 
+                {
+                    lineVec.push_back(curW); 
+                    curW = "";
+                }
                 if(lineVec.size() > 0)
                 { 
                     lexAnalysis.push_back(lineVec);
@@ -395,6 +487,21 @@ int main()
                 }
                 
             }
+            else if(seperateKeyword(c))
+            {
+                
+                if(curW.length() >0) lineVec.push_back(curW); 
+                curW="";
+                string t = "";
+                
+                lineVec.push_back(t+c);
+            }
+            else if(c == ' ')
+            {
+                if(curW.length() >0) lineVec.push_back(curW); 
+                curW = "";
+            }
+            
             else 
             {
 
