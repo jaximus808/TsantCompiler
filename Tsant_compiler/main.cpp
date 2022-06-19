@@ -256,7 +256,16 @@ class instructions
             }
             else if(operationType == "assign")
             {
-                cout << "variable " <<  name <<" with operation "<<setValue.getValuePrint();
+                cout << "variable " <<  name <<" assigned value of operation "<<setValue.getValuePrint();
+            }
+            else if(operationType == "funcCall")
+            {
+
+                cout << "function  " <<  name <<" called with paramters: ";
+                for(int i = 0; i < funcParametersUnParsed.size(); i++)
+                {
+                    cout << funcParametersUnParsed[i]<<", ";
+                }
             }
             cout <<"\n";
         }
@@ -307,12 +316,14 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 {
                     parenthesisDepth--; 
                     if (parenthesisDepth == 0)
-                    {
+                    {   
+                        unparsedTokens.push_back(paramQues);
                         instructions funcCall(cacheTokens[0], unparsedTokens, "funcCall");
                         orderOP.push_back(funcCall); 
                         cacheTokens.clear(); 
                         paramCheck = false;
                         paramQues = "";
+                        cout <<"MEOW FART";
                     }
                     
                 }
@@ -320,7 +331,7 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 {
                     if(bAST[line][pointer] == ",")
                     {
-                        if(paramQues.length() == 0) return; 
+                        if(paramQues.length() == 0) return false; 
                         unparsedTokens.push_back(paramQues);
                         paramQues = "";
                         

@@ -1,7 +1,6 @@
 int x=5 
 
 
-int x =3232+2
+int y =3232+2
 
-
-print(5)
+print(x)
