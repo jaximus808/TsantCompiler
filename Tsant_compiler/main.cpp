@@ -260,7 +260,7 @@ string sequenceOperator(string type, vector<string> parts, unordered_map<string,
                     {
 
                         string val = varMap.find(opTokens[i+1])->second->getValue();
-                        prevValue = int32String(val);
+                        nextValue = int32String(val);
                     }
 
 
