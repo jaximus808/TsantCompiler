@@ -9,6 +9,7 @@ using namespace std;
 
 // finsih the operator shit; 6/9/2022
 
+//fix some bugs with variables being on the right side. The function reads it but overpowers it idk why lol 6/20/22
 
 class variableManager
 {
@@ -16,17 +17,27 @@ class variableManager
         variableManager(string _type)
         {
             type = _type;
-            char placeHolder[1] = {'0'};
-            value = placeHolder;
+            value = "NULL";
         }
 
-        void setValue(char* byteVal)
+        void setValue(string byteVal)
         {
             value = byteVal;
         }
 
+        string getType()
+        {
+            return type; 
+        }
+
+        string getValue()
+        {
+
+            return value;
+        }
+
     private:
-        char* value; 
+        string value; 
         string type; 
 };
 
@@ -103,7 +114,7 @@ vector<string> subVector(vector<string> &line, int start, int end)
     return returnVec; 
 }
 
-char* byteConverter(string type, vector<string> parts, unordered_map<string, variableManager* > &varMap)
+string sequenceOperator(string type, vector<string> parts, unordered_map<string, variableManager* > &varMap)
 {
 
     //keywords
@@ -121,22 +132,166 @@ char* byteConverter(string type, vector<string> parts, unordered_map<string, var
             tokenOp = false; 
         }
 
-        if (tokenPhaseToken != tokenOp) cout<<"wtf";
         if(tokenOp) opTokens.push_back(parts[i]);
         else opKeys.push_back(parts[i]);
     }
-    if(opKeys.size()== opTokens.size()-1 )
+    if(opKeys.size()!= opTokens.size()-1 )
     {
         cout << "ERROR!!!!";
         return NULL; 
     }
     if(type == "int")
     {
-        int value = 0; 
+
+        cout << "operating type int" <<"\n";
+        for(int i = 0; i < opKeys.size(); i++)
+        {
+            
+            if(opKeys[i] == "/" ||opKeys[i] == "*"  )
+            {
+                int prevValue;
+                int nextValue; 
+                if(isNum(opTokens[i]))
+                {
+                    prevValue = int32String(opTokens[i]); 
+                }
+                else 
+                {
+                    string _type = varMap.find(opTokens[i])->second->getType(); 
+                    if(_type != "int")
+                    {
+                        cout << "cannot combine type "<<_type<< " with type int";
+                        return NULL;
+                    }
+                    else
+                    {
+
+                        string val = varMap.find(opTokens[i])->second->getValue();
+                        prevValue = int32String(val);
+                    }
+
+                }
+
+                if(isNum(opTokens[i+1]))
+                {
+                    nextValue = int32String(opTokens[i+1]); 
+                }
+                else 
+                {
+                    string _type = varMap.find(opTokens[i+1])->second->getType(); 
+                    if(_type != "int")
+                    {
+                        cout << "cannot combine type "<<_type<< " with type int";
+                        return NULL;
+                    }
+                    else
+                    {
+
+                        string val = varMap.find(opTokens[i+1])->second->getValue();
+                        prevValue = int32String(val);
+                    }
+
+
+                }
+                if(opKeys[i] == "/")
+                {
+
+                    opTokens[i] = to_string(prevValue / nextValue);
+                }
+                else 
+                {
+                    opTokens[i] = to_string(prevValue * nextValue);
+                }
+
+                opTokens.erase(opTokens.begin()+i+1);
+                
+                opKeys.erase(opKeys.begin()+i); 
+
+            }
+            
+            
+        }
+
+        for(int i = 0; i < opKeys.size(); i++)
+        {
+            
+            if(opKeys[i] == "+" ||opKeys[i] == "-"  )
+            {
+                int prevValue;
+                int nextValue; 
+                if(isNum(opTokens[i]))
+                {
+                    prevValue = int32String(opTokens[i]); 
+
+                }
+                else 
+                {
+                    string _type = varMap.find(opTokens[i])->second->getType(); 
+                    if(_type != "int")
+                    {
+                        cout << "cannot combine type "<<_type<< " with type int";
+                        return NULL;
+                    }
+                    else
+                    {
+
+                        string val = varMap.find(opTokens[i])->second->getValue();
+                        prevValue = int32String(val);
+                    }
+
+                }
+
+                if(isNum(opTokens[i+1]))
+                {
+                    
+                    nextValue = int32String(opTokens[i+1]);
+                    
+                }
+                else 
+                {
+                    string _type = varMap.find(opTokens[i+1])->second->getType(); 
+                    if(_type != "int")
+                    {
+                        cout << "cannot combine type "<<_type<< " with type int";
+                        return NULL;
+                        
+                    }
+                    else
+                    {
+
+                        string val = varMap.find(opTokens[i+1])->second->getValue();
+                        prevValue = int32String(val);
+                    }
+
+
+                }
+                if(opKeys[i] == "+")
+                {
+
+                    opTokens[i] = to_string(prevValue + nextValue);
+
+                }
+                else 
+                {
+                    opTokens[i] = to_string(prevValue - nextValue);
+                }
+
+                opTokens.erase(opTokens.begin()+i+1);
+                
+                opKeys.erase(opKeys.begin()+i); 
+
+            }
+            
+            
+        }
+
+        
+
+        return opTokens[0];
+
 
     }
-    char* dog = NULL; 
-    return dog;
+    return "";
 
 }
 
@@ -238,12 +393,21 @@ class instructions
         {
             if(operationType == "declare")
             {
-                variableManager holder = variableManager(type); 
-                variables.insert(make_pair(name, &holder)); 
+                variableManager* holder = new variableManager(type); 
+
+                cout <<  "\nStoring variable with name "<<name<<" with pointer at "<<&holder <<"\n";
+                variables.insert(make_pair(name, holder)); 
+
+
+
             }
             else if(operationType == "assign")
             {
-                char* byteVal = byteConverter(type, setValue.getValue(),variables);
+                string _type = variables.find(name)->second->getType(); 
+                string finalVal = sequenceOperator(_type, setValue.getValue(),variables);
+                variables.find(name)->second->setValue(finalVal); 
+                cout << "\nvariable "<<name<<" assigned value "<<finalVal<<endl;
+                
             }
         }
 
@@ -524,6 +688,7 @@ int main()
             cout << "\nCompiler Stopped";
             return 1; 
         }
+        interpertor(variables, instructionList); 
         
          
 
