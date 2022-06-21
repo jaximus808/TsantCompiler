@@ -79,8 +79,8 @@ bool keywordExist(string questionKey)
 
 bool operatorCorrect(string questionKey)
 {
-    string keywords[] = { "+", "-"};
-    int kLen = 2;
+    string keywords[] = { "+", "-","*","/"};
+    int kLen = 4;
     for(int i =0; i < kLen; i++)
     {
         if(keywords[i] == questionKey) return true;
@@ -138,25 +138,28 @@ string sequenceOperator(string type, vector<string> parts, unordered_map<string,
     if(opKeys.size()!= opTokens.size()-1 )
     {
         cout << "ERROR!!!!";
-        return NULL; 
+
+        return ""; 
     }
     if(type == "int")
     {
 
-        cout << "operating type int" <<"\n";
         for(int i = 0; i < opKeys.size(); i++)
         {
             
             if(opKeys[i] == "/" ||opKeys[i] == "*"  )
             {
+
                 int prevValue;
                 int nextValue; 
                 if(isNum(opTokens[i]))
                 {
                     prevValue = int32String(opTokens[i]); 
+
                 }
                 else 
                 {
+
                     string _type = varMap.find(opTokens[i])->second->getType(); 
                     if(_type != "int")
                     {
@@ -171,6 +174,7 @@ string sequenceOperator(string type, vector<string> parts, unordered_map<string,
                     }
 
                 }
+
 
                 if(isNum(opTokens[i+1]))
                 {
@@ -641,7 +645,7 @@ int main()
             
 
             
-            if(int(c) == 10) 
+            if(int(c) == 10 || c ==';') 
             {
 
                 if(curW.length() >0) 
