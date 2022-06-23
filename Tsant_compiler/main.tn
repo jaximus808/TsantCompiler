@@ -1,10 +1,7 @@
-int x=5 +20
+int age = 5
 
-int y = x *2
+print("your age is ")
+println(age)
 
-x=y/2;
-
-
-int flightControl = 53*x
-
+print("L baby")
 
