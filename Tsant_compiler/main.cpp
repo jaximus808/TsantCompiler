@@ -868,19 +868,28 @@ int main(int argc, char** argv)
         cout << "error: no input file found";
         return 1;
     }
-    if(argc == 2)
+    
+    if(argc > 1)
     {
         inputFile = argv[1];
 
+        //prob do this better
         string inputBuffer = string(inputFile);
-        if(inputBuffer.substr(inputBuffer.length()-3,3) != ".tn")
+        if(inputBuffer == "-help")
+        {
+            cout << "Tsant Compiler/Interpreter Syntax:"<<endl;
+            cout << "./main [file name || -help] [debug: true or false]"<<endl;
+            return 0;
+            
+        }
+        else if(inputBuffer.substr(inputBuffer.length()-3,3) != ".tn")
         {
             cout<<"error: expected file of .tn";
             return 1; 
         }
 
     }
-    if(argc == 3)
+    if(argc > 2)
     {
         cout << argv[2];
         string arg = string(argv[2]);
