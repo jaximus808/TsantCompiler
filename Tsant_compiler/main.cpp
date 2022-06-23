@@ -899,7 +899,7 @@ int main(int argc, char** argv)
         }
     }
     std::ifstream file; 
-    file.open("main.tn");
+    file.open(argv[1]);
 
 
     vector<vector<string> > lexAnalysis;
