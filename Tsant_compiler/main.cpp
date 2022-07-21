@@ -40,6 +40,69 @@ class variableManager
         string value; 
         string type; 
 };
+/*
+class functionsManager
+{
+    public:
+        functionsManager(vector<vector<string>> &_params, vector<instructions> &_operations)
+        {
+            operations = _operations;
+            for(int i = 0; i < _params.size(); i++)
+            {
+                if(_params[i].size() != 2)
+                {
+                    cout << "error: false function declaration";
+                    return;
+                }
+                if(keywordExist(_params[i][1]))
+                {
+                    cout << "error: cannot use keyword as variable name";
+                    return;
+                }
+                string type = _params[i][0];
+
+                variableManager* newVar = new variableManager(type);
+                localVar.insert(make_pair(_params[i][1],newVar));
+                paramNames.push_back(_params[i][1]);
+            }
+        }
+
+        string operate(vector<vector<string>> inputedParam,unordered_map<string,variableManager*> &varMap, unordered_map<string, instructions*> &functions,bool debug)
+        {
+            if(inputedParam.size() != paramNames.size()) 
+            {
+                cout << "error: not enough arguments given";
+                return "error";
+            }
+            for(int i = 0; i < paramNames.size(); i++)
+            {
+                localVar.find(paramNames[i])->second->setValue(sequenceOperator(localVar.find(paramNames[i])->second->getType(), inputedParam[i],varMap));
+            }
+
+            unordered_map<string,variableManager*> updatedVarMap(varMap);
+
+            updatedVarMap.insert(localVar.begin(), localVar.end());
+
+            for(int i = 0; i < operations.size(); i++)
+            {
+                string returnVal = operations[i].operate(updatedVarMap,functions,debug);
+                if(returnVal.length() > 0) return returnVal;
+                //this could lowkey be it??
+            }
+
+
+        }
+
+    private:
+        string value; 
+        string type; 
+
+        vector<string> paramNames;
+        vector<instructions> operations;
+        unordered_map<string, variableManager*> localVar; 
+
+};
+*/
 
 // class functionManager
 // {
@@ -50,7 +113,7 @@ class variableManager
 #pragma region helperFuncs
 bool seperateKeyword(char c)
 {
-    int chars[] = {'=','+','-','*','/','(',')',','};
+    int chars[] = {'=','+','-','*','/','(',')',',','{','}'};
 
     for(int i = 0; i < 8; i++)
     {
@@ -127,9 +190,6 @@ void err(string msg)
 //detect the type
 string sequenceOperator(string type, vector<string> parts, unordered_map<string, variableManager* > &varMap)
 {
-
-    
-
 
     //string " ->  "\"";
     //keywords
@@ -391,8 +451,6 @@ string sequenceOperator(string type, vector<string> parts, unordered_map<string,
     if(posType == "string")
     {
 
-
-
         for(int i = 0; i < opKeys.size(); i++)
         {
             
@@ -579,17 +637,20 @@ class instructions
         }
 
         //declaring functions
-        instructions(string _name, vector<instructions*> &_ops, vector<instructions*> &parameters, string _operation)
+        instructions(string _name, vector<instructions> &_ops, vector<string> &parameters,string _operationType)
         {
-            operationType = _operation; 
             name = _name; 
+            funcOperations = _ops;
+            funcParametersUnParsed = parameters;
+            operationType = _operationType; 
             
 
+            
         }
 
 
 
-        void operate(unordered_map<string,variableManager*> &variables,bool debug)
+        string operate(unordered_map<string,variableManager*> &variables,unordered_map<string,instructions*> &functions,bool debug)
         {
             if(operationType == "declare")
             {
@@ -597,6 +658,56 @@ class instructions
 
                 variables.insert(make_pair(name, holder)); 
                 if(debug) cout <<  "\nStoring variable with name "<<name<<" with pointer at "<<&holder <<"\n";
+               
+
+
+            }
+            else if(operationType == "funcDeclare")
+            {
+                vector<vector<string> > parasedParameters; 
+
+                vector<string> parameterPart; 
+                for(int i = 0; i < funcParametersUnParsed.size(); i++)
+                {
+                    if(funcParametersUnParsed[i] == ",") 
+                    {
+                        parasedParameters.push_back(parameterPart);
+                        parameterPart.clear();
+                    }
+                    else 
+                    {
+                        parameterPart.push_back(funcParametersUnParsed[i]);
+                    }
+
+                }
+                if(parameterPart.size() == 0)
+                {
+                    cout << "Expected token";
+                    return ""; 
+                }
+                parasedParameters.push_back(parameterPart);
+                parameterPart.clear();
+                for(int i = 0; i < parasedParameters.size()-1; i++)
+                {
+                    if(parasedParameters[i].size() != 2)
+                    {
+                        cout << "error: false function declaration";
+                        return "";
+                    }
+                    if(keywordExist(parasedParameters[i][1]))
+                    {
+                        cout << "error: cannot use keyword as variable name";
+                        return "";
+                    }
+                    string type = parasedParameters[i][0];
+
+                    variableManager* newVar = new variableManager(type);
+                    localVar.insert(make_pair(parasedParameters[i][1],newVar));
+                    paramNames.push_back(parasedParameters[i][1]);
+                }
+
+                functions.insert(make_pair(name,this )); 
+                //if(debug) cout <<  "\nDeclaring function with name "<<name;
                
 
 
@@ -634,7 +745,7 @@ class instructions
                 if(parameterPart.size() == 0)
                 {
                     cout << "Expected token";
-                    return; 
+                    return ""; 
                 }
                 parasedParameters.push_back(parameterPart);
                 parameterPart.clear();
@@ -650,21 +761,46 @@ class instructions
                 {
                     cout << sequenceOperator("int",parasedParameters[0], variables)<<endl;
                 }
+                else if(functions.find(name) != functions.end())
+                {
+                    functions.find(name)->second->operate(parasedParameters,variables,functions,debug);
+                }
                 else 
                 {
                     cout <<"error: unrecongized function";
-                    return; 
+                    return ""; 
                 }
             }
+
+                return "";
         }
 
 
         //only this will be called when operating
-        string funcOp()
+        string operate(vector<vector<string>> inputedParam,unordered_map<string,variableManager*> &varMap, unordered_map<string, instructions*> &functions,bool debug)
         {
+            if(inputedParam.size()-1 != paramNames.size()) 
+            {
+                cout << "error: not enough arguments given";
+                return "error";
+            }
+            for(int i = 0; i < paramNames.size(); i++)
+            {
+                localVar.find(paramNames[i])->second->setValue(sequenceOperator(localVar.find(paramNames[i])->second->getType(), inputedParam[i],varMap));
+            }
+
+            unordered_map<string,variableManager*> updatedVarMap(varMap);
+
+            updatedVarMap.insert(localVar.begin(), localVar.end());
+            for(int i = 0; i < funcOperations.size(); i++)
+            {
+                string returnVal = funcOperations[i].operate(updatedVarMap,functions,debug);
+                if(returnVal.length() > 0) return returnVal;
+                //this could lowkey be it??
+            }
+            return "";
 
         }
-
 
         void debug()
         {
@@ -701,9 +837,15 @@ class instructions
 
 
         //add a function
-        vector<instructions* > funcOperations; 
-        vector<instructions* > funcParameters; 
+        vector<instructions > funcOperations; 
+        vector<instructions> funcParameters; 
         vector<string > funcParametersUnParsed;
+
+        vector<string> paramNames;
+        vector<instructions> operations;
+        unordered_map<string, variableManager*> localVar; 
+
+        
 
 };
 
@@ -714,6 +856,13 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
 {
 
     vector<string> cacheTokens; 
+
+    bool functionInstructs = false; 
+    string funcName = "";
+    vector<instructions> instructFunc;
+    vector<string> unparsedParamDeclare; 
+
+    //eZZau
     for(int line = 0; line < bAST.size(); line++)
     { 
         bool paramCheck = false; 
@@ -736,12 +885,61 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                     if (parenthesisDepth == 0)
                     {   
                         unparsedTokens.push_back(paramQues);
-                        instructions funcCall(cacheTokens[0], unparsedTokens, "funcCall");
-                       
-                        orderOP.push_back(funcCall); 
-                        cacheTokens.clear(); 
-                        paramCheck = false;
-                        paramQues = "";
+                        
+                        if(pointer +1 < bAST[line].size())
+                        {
+                            if(bAST[line][pointer+1] == "=")
+                            {
+                                if(functionInstructs)
+                                {
+                                    cout <<"error: cannot define functions within functions";
+                                    return false; 
+                                }
+                                //now creating new func 
+                                //change mode to reading function when adding to instruction 
+                                funcName =cacheTokens[0];
+                                functionInstructs = true; 
+                                pointer++;
+                                unparsedParamDeclare = unparsedTokens;
+
+                            }
+                            else 
+                            //do this better later
+                            {
+                                instructions funcCall(cacheTokens[0], unparsedTokens, "funcCall");
+                            //perfect check here lol
+                            //check for = token or smth
+                                if(functionInstructs)
+                                {
+                                    instructFunc.push_back(funcCall);
+                                }
+                                else
+                                {
+                                    orderOP.push_back(funcCall); 
+                                }
+                                cacheTokens.clear(); 
+                                paramCheck = false;
+                                paramQues = "";
+                            }
+                        }
+                        else 
+                        {
+                            instructions funcCall(cacheTokens[0], unparsedTokens, "funcCall");
+                        //perfect check here lol
+                        //check for = token or smth
+                            if(functionInstructs)
+                            {
+                                instructFunc.push_back(funcCall);
+                            }
+                            else
+                            {
+                                orderOP.push_back(funcCall); 
+                            }
+                            cacheTokens.clear(); 
+                            paramCheck = false;
+                            paramQues = "";
+                        }
+                        
                     }
                     
                 }
@@ -786,7 +984,14 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                     return false; 
                 }
                 instructions declare(bAST[line][pointer+1], bAST[line][pointer], "none", "declare");
-                orderOP.push_back(declare);
+                if(functionInstructs)
+                {
+                    instructFunc.push_back(declare);
+                }
+                else
+                {
+                    orderOP.push_back(declare);
+                }
             }
             else if(bAST[line][pointer] == "=")
             {
@@ -802,8 +1007,27 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                     return false; 
                 }
                 instructions assign(bAST[line][pointer-1], subVector(bAST[line], pointer+1, bAST[line].size()) , "assign");
-                orderOP.push_back(assign);
+                if(functionInstructs)
+                {
+                    instructFunc.push_back(assign);
+                }
+                else
+                {
+                    orderOP.push_back(assign);
+                }
                 pointer = bAST[line].size();
+                
+            }
+            else if(bAST[line][pointer] == "endf")
+            {
+                if(!functionInstructs)
+                {
+                    cout << "error: no function to end";
+                    return false; 
+                }
+                instructions funcDefine(funcName, instructFunc,unparsedParamDeclare , "funcDeclare");
+                orderOP.push_back(funcDefine);
+                functionInstructs = false; 
                 
             }
             else if(bAST[line][pointer] == "(")
@@ -833,6 +1057,7 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 }
                 cacheTokens.push_back(bAST[line][pointer]);
             }
+            
         }
         cacheTokens.clear();
     }
@@ -848,11 +1073,11 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
 }
 
 
-void interpertor(unordered_map<string, variableManager* > &varMap,vector<instructions> &orders, bool debug )
+void interpertor(unordered_map<string, variableManager* > &varMap, unordered_map<string, instructions* > &functions,vector<instructions> &orders, bool debug )
 {
     for(int i = 0; i < orders.size(); i++)
     {
-        orders[i].operate(varMap,debug);
+        orders[i].operate(varMap,functions,debug);
     }
 }
 
@@ -915,6 +1140,8 @@ int main(int argc, char** argv)
 
 
     unordered_map<string, variableManager*> variables;
+
+    unordered_map<string, instructions*> functions;
 
     vector<instructions> instructionList; 
     if(file.is_open())
@@ -1028,7 +1255,7 @@ int main(int argc, char** argv)
             cout << "\nCompiler Stopped";
             return 1; 
         }
-        interpertor(variables, instructionList,debug); 
+        interpertor(variables,functions, instructionList,debug); 
         
          
 

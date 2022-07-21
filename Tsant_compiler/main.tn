@@ -1,7 +1,19 @@
-int age = 5
+int equation = 5+3*2;
 
-print("your age is ")
-println(age)
+println("The equation is equal to: ")
+println(equation + 2)
 
-print("L baby")
 
+nuts() =   
+    println("hello world");
+
+    println("I think you are a very special person");
+
+    println(":)");
+    endf;
+
+
+
+nuts();
+
+println("WEEE");
