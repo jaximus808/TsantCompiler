@@ -10,6 +10,9 @@ nuts() =
     println("I think you are a very special person");
 
     println(":)");
+    int x = 5;
+    println(x);
+    
     endf;
 
 
