@@ -667,6 +667,8 @@ class instructions
                 vector<vector<string> > parasedParameters; 
 
                 vector<string> parameterPart; 
+                //cout << funcParametersUnParsed.size()<<endl;
+                
                 for(int i = 0; i < funcParametersUnParsed.size(); i++)
                 {
                     if(funcParametersUnParsed[i] == ",") 
@@ -687,7 +689,8 @@ class instructions
                 }
                 parasedParameters.push_back(parameterPart);
                 parameterPart.clear();
-                for(int i = 0; i < parasedParameters.size()-1; i++)
+                //cout <<  parasedParameters.size() <<endl;
+                for(int i = 0; i < parasedParameters.size(); i++)
                 {
                     if(parasedParameters[i].size() != 2)
                     {
@@ -779,7 +782,11 @@ class instructions
         //only this will be called when operating
         string operate(vector<vector<string>> inputedParam,unordered_map<string,variableManager*> &varMap, unordered_map<string, instructions*> &functions,bool debug)
         {
-            if(inputedParam.size()-1 != paramNames.size()) 
+            
+            // cout << "TEST!@#"<<endl;
+            // cout << paramNames.size()<<endl;
+            // cout << inputedParam.size()<<endl;
+            if(inputedParam.size() != paramNames.size()) 
             {
                 cout << "error: not enough arguments given";
                 return "error";
@@ -884,7 +891,10 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                     parenthesisDepth--; 
                     if (parenthesisDepth == 0)
                     {   
-                        unparsedTokens.push_back(paramQues);
+                        //unparsedTokens.push_back(paramQues);
+                        // cout << "NICE"<<endl;
+                        // cout << paramQues<<endl;
+                        // cout << unparsedTokens.size()<<endl;
                         
                         if(pointer +1 < bAST[line].size())
                         {
@@ -945,19 +955,34 @@ bool LexicalAnalysis(vector<vector<string> > &bAST, vector<instructions> &orderO
                 }
                 if(parenthesisDepth == 1)
                 {
-                    if(bAST[line][pointer] == ","||bAST[line][pointer] == "+"||bAST[line][pointer] == "-"||bAST[line][pointer] == "/"||bAST[line][pointer] == "*")
-                    {
-                        if(paramQues.length() == 0) return false; 
-                        unparsedTokens.push_back(paramQues);
+                    unparsedTokens.push_back(bAST[line][pointer]);
 
-                        unparsedTokens.push_back(bAST[line][pointer]);
-                        paramQues = "";
+                    //cout << bAST[line][pointer] <<endl;
+                    // if(bAST[line][pointer] == ","||bAST[line][pointer] == "+"||bAST[line][pointer] == "-"||bAST[line][pointer] == "/"||bAST[line][pointer] == "*")
+                    // {
+                    //     if(paramQues.length() == 0) return false; 
+                    //     unparsedTokens.push_back(paramQues);
+
+                    //     unparsedTokens.push_back(bAST[line][pointer]);
+                    //     paramQues = "";
                         
-                    }
-                    else 
-                    {
-                        paramQues += bAST[line][pointer]; 
-                    }
+                    // }
+                    // //checking for variable declarations
+                    // else if(bAST[line][pointer] == "int")
+                    // {
+                    //     if(pointer+2 <bAST[line].size()) 
+                    //     {
+                    //         cout << "error: not enough args for function declaration"<<endl;
+                    //         return false; 
+                    //     }
+
+
+
+                    // }
+                    // else 
+                    // {
+                    //     paramQues += bAST[line][pointer]; 
+                    // }
                     
                 }
                 else 

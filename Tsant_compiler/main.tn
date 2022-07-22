@@ -1,22 +1,11 @@
-int equation = 5+3*2;
+sum(int x, int y) =
 
-println("The equation is equal to: ")
-println(equation + 2)
-
-
-nuts() =   
-    println("hello world");
-
-    println("I think you are a very special person");
-
-    println(":)");
-    int x = 5;
+    print("First variable is: ");
     println(x);
-    
-    endf;
+    print("Second variable is: ");
+    println(y);
+    print("The solution is: ");
+    println(x*y);
+    endf
 
-
-
-nuts();
-
-println("WEEE");
+sum(5,2)
